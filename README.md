@@ -9,7 +9,7 @@
 This project is based on [Michael Villar's excellent Motion Experiments post](http://www.michaelvillar.com/motion) - Syncing/Success Icon
 
 ## Installation
-* cocoapods: `pod FSSyncSpinner`
+* cocoapods: `pod 'FSSyncSpinner'`
 * manual   : drag FSSyncSpinner.h and FSSyncSpinner.m in to your project
 ```objective-c
 #import "FSSyncSpinner.h"
