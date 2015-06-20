@@ -10,6 +10,7 @@
 
 @interface FSSyncSpinner : UIView
 
+@property (strong, nonatomic) UIColor *colorOfProgress;
 @property (strong, nonatomic) UIColor *colorOfSuccess;
 @property (strong, nonatomic) UIColor *colorOfFailure;
 

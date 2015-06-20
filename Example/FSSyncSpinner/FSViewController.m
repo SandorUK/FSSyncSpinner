@@ -13,6 +13,7 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    [_indicator setColorOfProgress:[UIColor darkGrayColor]];
     [_indicator setColorOfSuccess:[UIColor greenColor]];
     [_indicator setColorOfFailure:[UIColor redColor]];
     

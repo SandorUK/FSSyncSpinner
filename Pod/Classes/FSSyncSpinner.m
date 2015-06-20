@@ -24,7 +24,7 @@
 
 @implementation FSSyncSpinnerRing
 
-- (instancetype)initWith:(BOOL)arrows andThickness:(CGFloat)thickness
+- (instancetype)initWith:(BOOL)arrows andThickness:(CGFloat)thickness andColor:(UIColor *)color
 {
     self = [super init];
     if (self) {
@@ -33,7 +33,7 @@
         self.arcLayer = [CAShapeLayer layer];
         self.arcLayer.backgroundColor = [[UIColor clearColor] CGColor];
         self.arcLayer.fillColor = [[UIColor clearColor] CGColor];
-        self.arcLayer.strokeColor = kSyncColor.CGColor;
+        self.arcLayer.strokeColor = color ? color.CGColor : kSyncColor.CGColor;
         self.arcLayer.lineWidth = thickness;
         self.arcLayer.lineCap = kCALineCapRound;
         [self addSublayer:self.arcLayer];
@@ -138,12 +138,12 @@
     _containerLayer.frame = self.layer.bounds;
     [self.layer addSublayer:_containerLayer];
     
-    _topRing = [[FSSyncSpinnerRing alloc] initWith:NO andThickness:3.0];
+    _topRing = [[FSSyncSpinnerRing alloc] initWith:NO andThickness:3.0 andColor:self.colorOfProgress];
     _topRing.frame = _containerLayer.bounds;
     _topRing.transform = CATransform3DMakeRotation(-M_PI*0.2, 0, 0, 1.0);
     [_containerLayer addSublayer:_topRing];
     
-    _bottomRing = [[FSSyncSpinnerRing alloc] initWith:NO andThickness:3.0];
+    _bottomRing = [[FSSyncSpinnerRing alloc] initWith:NO andThickness:3.0 andColor:self.colorOfProgress];
     _bottomRing.frame = _containerLayer.bounds;
     _bottomRing.transform = CATransform3DMakeRotation(M_PI*0.8, 0, 0, 1.0);
     [_containerLayer addSublayer:_bottomRing];
