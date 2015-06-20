@@ -13,6 +13,9 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    [_indicator setColorOfSuccess:[UIColor greenColor]];
+    [_indicator setColorOfFailure:[UIColor redColor]];
+    
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     if (indexPath.section == 0) {
         return;
@@ -20,7 +23,9 @@
     if (indexPath.row == 0) {
         [_indicator startAnimating];
     } else if (indexPath.row == 1) {
-        [_indicator finish];
+        [_indicator finishWithSuccess:YES];
+    } else if (indexPath.row == 2) {
+        [_indicator finishWithSuccess:NO];
     }
 }
 

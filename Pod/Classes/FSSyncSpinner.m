@@ -8,10 +8,11 @@
 
 #import "FSSyncSpinner.h"
 
-#define kRotationPeriod 1.2
+#define kRotationPeriod 0.5
 #define kDisappearDuration 0.3
 
-#define kFinishColor [UIColor colorWithRed:42/255.0 green:172/255.0 blue:0/255.0 alpha:1.0]
+#define kSuccessColor [UIColor colorWithRed:42/255.0 green:172/255.0 blue:0/255.0 alpha:1.0]
+#define kFailureColor [UIColor colorWithRed:42/255.0 green:172/255.0 blue:0/255.0 alpha:1.0]
 #define kSyncColor [UIColor colorWithRed:35/255.0 green:118/255.0 blue:237/255.0 alpha:1.0]
 
 @interface FSSyncSpinnerRing : CALayer
@@ -23,7 +24,7 @@
 
 @implementation FSSyncSpinnerRing
 
-- (instancetype)init
+- (instancetype)initWith:(BOOL)arrows andThickness:(CGFloat)thickness
 {
     self = [super init];
     if (self) {
@@ -33,13 +34,18 @@
         self.arcLayer.backgroundColor = [[UIColor clearColor] CGColor];
         self.arcLayer.fillColor = [[UIColor clearColor] CGColor];
         self.arcLayer.strokeColor = kSyncColor.CGColor;
+        self.arcLayer.lineWidth = thickness;
+        self.arcLayer.lineCap = kCALineCapRound;
         [self addSublayer:self.arcLayer];
         
-        // arrow
-        self.arrowLayer = [CAShapeLayer layer];
-        self.arrowLayer.fillColor = self.arcLayer.strokeColor;
-        self.arrowLayer.strokeColor = [[UIColor clearColor] CGColor];
-        [self addSublayer:self.arrowLayer];
+        if (arrows) {
+            // arrow
+            self.arrowLayer = [CAShapeLayer layer];
+            self.arrowLayer.fillColor = self.arcLayer.strokeColor;
+            self.arrowLayer.strokeColor = [[UIColor clearColor] CGColor];
+            
+            [self addSublayer:self.arrowLayer];
+        }
     }
     return self;
 }
@@ -51,7 +57,7 @@
         return;
     }
     CGSize size = self.bounds.size;
-    _arcLayer.lineWidth = size.width * 0.1;
+    //_arcLayer.lineWidth = size.width * 0.1;
     _arcLayer.frame = self.bounds;
     UIBezierPath *arcPath = [UIBezierPath bezierPathWithOvalInRect:self.bounds];
     _arcLayer.path = arcPath.CGPath;
@@ -79,9 +85,11 @@
 @property (strong, nonatomic) FSSyncSpinnerRing *bottomRing;
 @property (strong, nonatomic) CALayer *containerLayer;
 @property (strong, nonatomic) CAShapeLayer *checkmarkLayer;
+@property (strong, nonatomic) CAShapeLayer *crossmarkLayer;
 
 @property (assign, nonatomic) CGFloat finishSpeed;
 @property (assign, nonatomic) BOOL needFinish;
+@property (assign, nonatomic) BOOL isSuccessful;
 
 - (void)initialize;
 - (void)initLayers;
@@ -130,12 +138,12 @@
     _containerLayer.frame = self.layer.bounds;
     [self.layer addSublayer:_containerLayer];
     
-    _topRing = [[FSSyncSpinnerRing alloc] init];
+    _topRing = [[FSSyncSpinnerRing alloc] initWith:NO andThickness:3.0];
     _topRing.frame = _containerLayer.bounds;
     _topRing.transform = CATransform3DMakeRotation(-M_PI*0.2, 0, 0, 1.0);
     [_containerLayer addSublayer:_topRing];
     
-    _bottomRing = [[FSSyncSpinnerRing alloc] init];
+    _bottomRing = [[FSSyncSpinnerRing alloc] initWith:NO andThickness:3.0];
     _bottomRing.frame = _containerLayer.bounds;
     _bottomRing.transform = CATransform3DMakeRotation(M_PI*0.8, 0, 0, 1.0);
     [_containerLayer addSublayer:_bottomRing];
@@ -177,10 +185,11 @@
     [self.bottomRing.arcLayer addAnimation:flex forKey:@"flex"];
 }
 
-- (void)finish
+- (void)finishWithSuccess:(BOOL)success
 {
     if (!_needFinish) {
         _needFinish = YES;
+        _isSuccessful = success;
         [self performCompletionAtProperTime];
     }
 }
@@ -204,15 +213,37 @@
     self.finishSpeed = [_containerLayer.presentationLayer speed];
     
     [CATransaction begin];
+    
     [CATransaction setCompletionBlock:^{
-        self.topRing.arcLayer.strokeColor = kFinishColor.CGColor;
-        self.bottomRing.arcLayer.strokeColor = kFinishColor.CGColor;
-        self.topRing.arrowLayer.fillColor = kFinishColor.CGColor;
-        self.bottomRing.arrowLayer.fillColor = kFinishColor.CGColor;
+        
+        UIColor *color = [UIColor clearColor];
+        
+        if (_isSuccessful) {
+            if (self.colorOfSuccess) {
+                color = self.colorOfSuccess;
+            }
+            else{
+                color = kSuccessColor;
+            }
+        }
+        else{
+            if (self.colorOfFailure) {
+                color = self.colorOfFailure;
+            }
+            else{
+                color = kFailureColor;
+            }
+        }
+        
+        self.topRing.arcLayer.strokeColor = color.CGColor;
+        self.bottomRing.arcLayer.strokeColor = color.CGColor;
+        self.topRing.arrowLayer.fillColor = color.CGColor;
+        self.bottomRing.arrowLayer.fillColor = color.CGColor;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self performInverseEclipse];
         });
     }];
+    
     CGFloat currentSpeed = [self.topRing.arcLayer.presentationLayer speed];
     [self.topRing.arcLayer removeAllAnimations];
     [self.bottomRing.arcLayer removeAllAnimations];
@@ -279,7 +310,56 @@
     [self.bottomRing.arrowLayer addAnimation:arrowDisappear forKey:@"arrowDisappear"];
     [CATransaction commit];
     
-    [self showCheckmark];
+    if (_isSuccessful) {
+        [self showCheckmark];
+    }
+    else{
+        [self showCheckmark];
+    }
+    
+}
+
+- (CAShapeLayer *)shapeLayerWithPath:(UIBezierPath *)path inFrame:(CGRect)frame{
+    
+    CAShapeLayer *layer = [CAShapeLayer layer];
+    layer.backgroundColor = [[UIColor clearColor] CGColor];
+    layer.fillColor = [[UIColor clearColor] CGColor];
+    layer.strokeColor = [[UIColor whiteColor] CGColor];
+    layer.lineWidth = frame.size.width * 0.125;
+    layer.lineCap = kCALineCapRound;
+    layer.lineJoin = kCALineJoinRound;
+    layer.frame = frame;
+    layer.path = path.CGPath;
+    
+    return layer;
+}
+
+- (UIBezierPath *)checkmarkPathWithSize:(CGSize)size{
+    CGPoint startPoint = CGPointMake(size.width * 0.1, size.height/5.0+1);
+    CGPoint midPoint = CGPointMake(size.width * 0.43, size.height - size.height * 0.1);
+    CGPoint endPoint = CGPointMake(size.width - size.width * 0.1 * 2, 1);
+    UIBezierPath *checkmarkPath = [UIBezierPath bezierPath];
+    [checkmarkPath moveToPoint:startPoint];
+    [checkmarkPath addLineToPoint:midPoint];
+    [checkmarkPath addLineToPoint:endPoint];
+    
+    return checkmarkPath;
+}
+
+- (UIBezierPath *)crossmarkPathWithSize:(CGSize)size{
+    CGPoint startPoint1 = CGPointMake(size.width * 0.5, size.height * 0.1);
+    CGPoint endPoint1 = CGPointMake(size.width - size.width * 0.5, size.height - size.height * 0.1);
+    
+    CGPoint startPoint2 = CGPointMake(size.width * 0.1, size.height - size.height * 0.5);
+    CGPoint endPoint2 = CGPointMake(size.width - size.width * 0.1, size.height * 0.5);
+    
+    UIBezierPath *checkmarkPath = [UIBezierPath bezierPath];
+    [checkmarkPath moveToPoint:startPoint1];
+    [checkmarkPath addLineToPoint:endPoint1];
+    [checkmarkPath moveToPoint:startPoint2];
+    [checkmarkPath addLineToPoint:endPoint2];
+    
+    return checkmarkPath;
 }
 
 - (void)showCheckmark
@@ -293,26 +373,24 @@
                               self.topRing.arcLayer.lineWidth * 3.2,
                               self.bounds.size.width - self.topRing.arcLayer.lineWidth * 4,
                               self.bounds.size.height - self.topRing.arcLayer.lineWidth * 6.4);
-    CGSize size = frame.size;
-    CGPoint startPoint = CGPointMake(0.0, size.height/6.0+1);
-    CGPoint midPoint = CGPointMake(size.width/3.0, size.height+1);
-    CGPoint endPoint = CGPointMake(size.width, 1);
-    UIBezierPath *checkmarkPath = [UIBezierPath bezierPath];
-    [checkmarkPath moveToPoint:startPoint];
-    [checkmarkPath addLineToPoint:midPoint];
-    [checkmarkPath addLineToPoint:endPoint];
     
-    CAShapeLayer *checkmarkLayer = [CAShapeLayer layer];
-    checkmarkLayer.backgroundColor = [[UIColor clearColor] CGColor];
-    checkmarkLayer.fillColor = [[UIColor clearColor] CGColor];
-    checkmarkLayer.strokeColor = [[UIColor whiteColor] CGColor];
-    checkmarkLayer.lineWidth = size.width * 0.125;
-    checkmarkLayer.frame = frame;
-    checkmarkLayer.path = checkmarkPath.CGPath;
-    checkmarkLayer.transform = CATransform3DMakeRotation(-currentRotationg-bounce*M_PI, 0, 0, 1);
-    [_containerLayer addSublayer:checkmarkLayer];
-    self.checkmarkLayer = checkmarkLayer;
-
+    CGSize size = frame.size;
+    
+    if (_isSuccessful) {
+        UIBezierPath *checkmarkPath = [self checkmarkPathWithSize:size];
+        CAShapeLayer *checkmarkLayer = [self shapeLayerWithPath:checkmarkPath inFrame:frame];
+        checkmarkLayer.transform = CATransform3DMakeRotation(-currentRotationg-bounce*M_PI, 0, 0, 1);
+        [_containerLayer addSublayer:checkmarkLayer];
+        self.checkmarkLayer = checkmarkLayer;
+    }
+    else{
+        UIBezierPath *crossmakrPath = [self crossmarkPathWithSize:size];
+        CAShapeLayer *crossMarkLayer = [self shapeLayerWithPath:crossmakrPath inFrame:frame];
+        crossMarkLayer.transform = CATransform3DMakeRotation(-currentRotationg-bounce*M_PI, 0, 0, 1);
+        [_containerLayer addSublayer:crossMarkLayer];
+        self.checkmarkLayer = crossMarkLayer;
+    }
+    
     [CATransaction begin];
     [CATransaction setCompletionBlock:^{
         [CATransaction begin];

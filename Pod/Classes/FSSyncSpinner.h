@@ -10,9 +10,13 @@
 
 @interface FSSyncSpinner : UIView
 
+@property (strong, nonatomic) UIColor *colorOfSuccess;
+@property (strong, nonatomic) UIColor *colorOfFailure;
+
 @property (assign, nonatomic) BOOL hidesWhenFinished;
+@property (assign, nonatomic) BOOL showsArrows;
 
 - (void)startAnimating;
-- (void)finish;
+- (void)finishWithSuccess:(BOOL)success;
 
 @end
