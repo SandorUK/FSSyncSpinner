@@ -347,11 +347,13 @@
 }
 
 - (UIBezierPath *)crossmarkPathWithSize:(CGSize)size{
-    CGPoint startPoint1 = CGPointMake(size.width * 0.5, size.height * 0.1);
-    CGPoint endPoint1 = CGPointMake(size.width - size.width * 0.5, size.height - size.height * 0.1);
+    CGPoint startPoint1 = CGPointMake(size.width * 0.18, size.height * 0.5);
+    CGPoint endPoint1 = CGPointMake(size.width - size.width * 0.18, size.height * 0.5);
     
-    CGPoint startPoint2 = CGPointMake(size.width * 0.1, size.height - size.height * 0.5);
-    CGPoint endPoint2 = CGPointMake(size.width - size.width * 0.1, size.height * 0.5);
+    CGFloat length = size.width - size.width * 0.18 * 2;
+    
+    CGPoint startPoint2 = CGPointMake(size.width * 0.5, size.height / 2 - length / 2);
+    CGPoint endPoint2 = CGPointMake(size.width * 0.5, size.height/ 2 + length / 2);
     
     UIBezierPath *checkmarkPath = [UIBezierPath bezierPath];
     [checkmarkPath moveToPoint:startPoint1];
